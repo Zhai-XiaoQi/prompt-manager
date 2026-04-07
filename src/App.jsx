@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Search, Plus, Download, Upload, Save, Copy, Edit, Trash2, 
   Image as ImageIcon, Hash, Moon, Sun, Check, Folder, Database,
-  AlertCircle, X, ChevronRight, LayoutGrid, Maximize
+  AlertCircle, X, ChevronRight, LayoutGrid, Maximize, Github
 } from 'lucide-react';
 
 const MD_FENCE = '`' + '`' + '`';
@@ -283,16 +283,28 @@ export default function App() {
             </div>
           </div>
 
+          {/* 底部控制栏 */}
           <div className="p-6 mt-auto">
             <div className={`flex items-center justify-between p-2 rounded-xl ${darkMode ? 'bg-[#2C2C2E]' : 'bg-[#F2F2F7]'}`}>
               <span className="text-xs font-semibold text-gray-500 px-4">共 {prompts.length} 个项目</span>
-              <button 
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2.5 rounded-lg bg-white dark:bg-black shadow-sm text-gray-600 dark:text-gray-300 hover:opacity-80 transition-opacity"
-                title="切换主题"
-              >
-                {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <a 
+                  href="https://github.com/Zhai-XiaoQi/prompt-manager" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="p-2.5 rounded-lg bg-white dark:bg-black shadow-sm text-gray-600 dark:text-gray-300 hover:opacity-80 transition-opacity flex items-center justify-center"
+                  title="访问 GitHub 源码"
+                >
+                  <Github className="w-4 h-4" />
+                </a>
+                <button 
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="p-2.5 rounded-lg bg-white dark:bg-black shadow-sm text-gray-600 dark:text-gray-300 hover:opacity-80 transition-opacity flex items-center justify-center"
+                  title="切换主题"
+                >
+                  {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
         </aside>
@@ -480,7 +492,6 @@ export default function App() {
 }
 
 // --- Image Cropper 组件 ---
-// 允许拖拽和平移图片生成 16:10 封面
 function CropperView({ src, onSave, onCancel, darkMode }) {
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -510,7 +521,6 @@ function CropperView({ src, onSave, onCancel, darkMode }) {
 
     const img = new Image();
     img.onload = () => {
-      // 模拟 object-fit: cover 计算基础比例
       const containerRatio = TARGET_W / TARGET_H;
       const imgRatio = img.width / img.height;
       let drawWidth, drawHeight;
@@ -523,11 +533,9 @@ function CropperView({ src, onSave, onCancel, darkMode }) {
         drawHeight = TARGET_W / imgRatio;
       }
 
-      // 缩放
       drawWidth *= zoom;
       drawHeight *= zoom;
 
-      // 坐标系转换 (UI偏移 转 真实画布偏移)
       const uiRatio = TARGET_W / containerRef.current.offsetWidth;
       const finalOffsetX = offset.x * uiRatio;
       const finalOffsetY = offset.y * uiRatio;
@@ -538,7 +546,6 @@ function CropperView({ src, onSave, onCancel, darkMode }) {
       ctx.translate(TARGET_W / 2 + finalOffsetX, TARGET_H / 2 + finalOffsetY);
       ctx.drawImage(img, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
 
-      // 返回压缩后的高质量 Base64
       onSave(canvas.toDataURL('image/jpeg', 0.8));
     };
     img.src = src;
@@ -607,7 +614,6 @@ function PromptModal({ isOpen, onClose, onSave, initialData, darkMode, showToast
   });
   const [tagInput, setTagInput] = useState('');
   
-  // 用于图片裁切器状态
   const [pendingCropSrc, setPendingCropSrc] = useState(null);
 
   useEffect(() => {
@@ -623,10 +629,9 @@ function PromptModal({ isOpen, onClose, onSave, initialData, darkMode, showToast
     }
   }, [initialData]);
 
-  // 全局粘贴图片监听器
   useEffect(() => {
     const handlePaste = (e) => {
-      if (pendingCropSrc) return; // 如果正在裁切则不处理
+      if (pendingCropSrc) return;
       const items = e.clipboardData?.items;
       if (!items) return;
       
@@ -667,7 +672,6 @@ function PromptModal({ isOpen, onClose, onSave, initialData, darkMode, showToast
     }));
   };
 
-  // 触发图片裁切流程
   const triggerCropper = (file) => {
     const reader = new FileReader();
     reader.onload = (event) => setPendingCropSrc(event.target.result);
@@ -762,7 +766,7 @@ function PromptModal({ isOpen, onClose, onSave, initialData, darkMode, showToast
                       <img src={formData.cover} alt="Cover" className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <label className="cursor-pointer text-white text-sm font-bold py-2 px-6 bg-black/60 backdrop-blur-md rounded-xl hover:bg-black transition-colors">
-                          重设图片 (可直接粘贴)
+                          更换图片或直接粘贴
                           <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                         </label>
                       </div>
@@ -776,7 +780,7 @@ function PromptModal({ isOpen, onClose, onSave, initialData, darkMode, showToast
                         <span>点击上传或直接粘贴 (Ctrl+V)</span>
                         <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
                       </label>
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-2">支持拖拽调整和无损裁切</p>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mt-2">自动高清压缩，支持全局粘贴截图</p>
                     </div>
                   )}
                 </div>
